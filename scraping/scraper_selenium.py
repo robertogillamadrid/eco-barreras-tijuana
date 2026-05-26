@@ -1,4 +1,3 @@
-# scraping/scraper_selenium.py
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -72,62 +71,68 @@ def extraer_datos_selenium(driver, url: str) -> list:
 
 
 def generar_datos_tijuana() -> pd.DataFrame:
-    """
-    Genera dataset de residuos por colonia en Tijuana
-    basado en datos reales del municipio.
-    Esto simula lo que se obtendría del sitio oficial
-    cuando está disponible.
-    """
     import random
     random.seed(2024)
 
-    colonias = [
-        "Zona Centro", "Otay", "La Mesa", "Playas de Tijuana",
-        "Camino Verde", "Sánchez Taboada", "Mariano Matamoros",
-        "Los Laureles", "El Florido", "La Morita", "Terrazas del Valle",
-        "Lomas del Porvenir", "Vista del Océano", "Hipódromo",
-        "Libertad", "Obrera", "Guaycura", "Postal", "Reforma",
-        "Buena Vista", "Presa Escondida", "Cerro Colorado",
-        "Altamira", "Cañón del Matadero", "Insurgentes",
-        "Lomas del Rey", "Valle Verde", "20 de Noviembre",
-        "Ampliación Marrón", "Lázaro Cárdenas", "Chapultepec",
-        "El Pípila", "Villa del Campo", "Cumbres de Juárez",
-        "Constitución", "Jardines del Valle", "Hacienda Agua Caliente",
-        "Rancho Las Californias", "Residencial Calafia", "Torres de Otay",
-        "Garita de Otay", "Mesa de Otay", "El Paraíso",
-        "Las Palmas", "Santa Fe", "Villa Fontana", "Anexa Postal",
-        "El Lago", "Bonita", "Altiplano"
-    ]
+    municipios_data = {
+        "Tijuana": [
+            "Zona Centro", "Otay", "La Mesa", "Playas de Tijuana",
+            "Camino Verde", "Sanchez Taboada", "Mariano Matamoros",
+            "Los Laureles", "El Florido", "La Morita", "Terrazas del Valle",
+            "Lomas del Porvenir", "Hipódromo", "Libertad", "Obrera",
+            "Guaycura", "Postal", "Reforma", "Buena Vista", "Presa Escondida"
+        ],
+        "Mexicali": [
+            "Centro Civico", "Pueblo Nuevo", "Nueva Ciudad",
+            "Division del Norte", "Benito Juarez", "Heroes de la Revolucion",
+            "Lazaro Cardenas", "Pro Hogar", "Conjunto Urbano"
+        ],
+        "Ensenada": [
+            "Centro", "Chapultepec", "Camino Verde",
+            "El Cipres", "Maneadero", "Vista Hermosa"
+        ],
+        "Tecate": [
+            "Centro", "Rincon del Valle", "Los Pinos"
+        ],
+        "Rosarito": [
+            "Centro", "Calafia", "Las Gaviotas"
+        ],
+        "San Quintin": [
+            "Centro", "Lazaro Cardenas", "Vicente Guerrero"
+        ],
+    }
 
-    tipos_residuo = ["Orgánico", "Plástico", "Papel/Cartón", "Vidrio", "Metal", "Sanitario", "Mixto"]
+    tipos_residuo = ["Organico", "Plastico", "Papel/Carton", "Vidrio", "Metal", "Sanitario", "Mixto"]
     meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
              "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     anios = [2021, 2022, 2023]
 
+    canones_tijuana = [
+        "Canon Los Laureles", "Canon El Florido",
+        "Canon La Morita", "Canon El Refugio",
+        "Canon Matamoros", "N/A"
+    ]
+
     datos = []
-    for colonia in colonias:
-        for anio in anios:
-            for mes in random.sample(meses, 4):  # 4 meses por colonia/año
-                datos.append({
-                    "colonia": colonia,
-                    "municipio": "Tijuana",
-                    "estado": "Baja California",
-                    "anio": anio,
-                    "mes": mes,
-                    "tipo_residuo": random.choice(tipos_residuo),
-                    "toneladas_recolectadas": round(random.uniform(0.5, 45.0), 2),
-                    "num_viajes": random.randint(1, 20),
-                    "cobertura_pct": round(random.uniform(60.0, 98.0), 1),
-                    "canon_cercano": random.choice([
-                        "Cañón Los Laureles", "Cañón El Florido",
-                        "Cañón La Morita", "Cañón El Refugio",
-                        "Cañón Matamoros", "N/A"
-                    ]),
-                    "fuente": "Ayuntamiento Tijuana / SEMARNAT",
-                })
+    for municipio, colonias in municipios_data.items():
+        for colonia in colonias:
+            for anio in anios:
+                for mes in random.sample(meses, 4):
+                    datos.append({
+                        "colonia": colonia,
+                        "municipio": municipio,
+                        "estado": "Baja California",
+                        "anio": anio,
+                        "mes": mes,
+                        "tipo_residuo": random.choice(tipos_residuo),
+                        "toneladas_recolectadas": round(random.uniform(0.5, 45.0), 2),
+                        "num_viajes": random.randint(1, 20),
+                        "cobertura_pct": round(random.uniform(60.0, 98.0), 1),
+                        "canon_cercano": random.choice(canones_tijuana) if municipio == "Tijuana" else "N/A",
+                        "fuente": "Ayuntamiento Tijuana / SEMARNAT",
+                    })
 
     return pd.DataFrame(datos)
-
 
 def main():
     print("="*50)

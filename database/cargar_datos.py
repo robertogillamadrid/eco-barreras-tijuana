@@ -1,4 +1,3 @@
-# database/cargar_datos.py
 
 import pandas as pd
 from sqlalchemy import text
@@ -9,7 +8,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.conexion import get_engine
 
 RUTA_RAW = r"C:\Users\admin\Desktop\proyecto_parra\residuos\data\residuos_raw.csv"
-
 def cargar_entidades(engine):
     """Carga entidades federativas desde el CSV."""
     entidades = [
@@ -134,7 +132,7 @@ def main():
 
 
 def cargar_datos_selenium(engine):
-    """Carga los datos de colonias de Tijuana desde el CSV de Selenium."""
+    """Carga los datos de colonias desde el CSV de Selenium para múltiples municipios."""
     import os
     ruta = r"C:\Users\admin\Desktop\proyecto_parra\residuos\data\residuos_selenium.csv"
 
@@ -146,26 +144,28 @@ def cargar_datos_selenium(engine):
     print(f"\n[+] Cargando {len(df)} registros de Selenium a MySQL...")
 
     with engine.connect() as conn:
-        # Obtener municipios existentes
+        # Obtener entidades
+        resultado = conn.execute(text("SELECT id_entidad FROM entidad_federativa WHERE nombre = 'Baja California'"))
+        id_bc = resultado.fetchone()[0]
+
+        # Insertar municipios que no existan
+        municipios_csv = df["municipio"].unique()
+        for mun in municipios_csv:
+            conn.execute(text("""
+                INSERT IGNORE INTO municipio (nombre, id_entidad)
+                VALUES (:nombre, :id_entidad)
+            """), {"nombre": mun, "id_entidad": id_bc})
+        conn.commit()
+
+        # Obtener mapa de municipios actualizado
         resultado = conn.execute(text("SELECT id_municipio, nombre FROM municipio"))
         municipios_map = {row[1]: row[0] for row in resultado}
 
-        # Obtener id de Tijuana
-        id_tijuana = municipios_map.get("Tijuana")
-        if not id_tijuana:
-            print("[!] Tijuana no encontrada en BD, insertando...")
-            conn.execute(text("""
-                INSERT IGNORE INTO municipio (nombre, id_entidad)
-                VALUES ('Tijuana', 1)
-            """))
-            conn.commit()
-            resultado = conn.execute(text(
-                "SELECT id_municipio FROM municipio WHERE nombre='Tijuana'"
-            ))
-            id_tijuana = resultado.fetchone()[0]
-
         insertados = 0
         for _, fila in df.iterrows():
+            id_mun = municipios_map.get(fila["municipio"])
+            if not id_mun:
+                continue
             try:
                 conn.execute(text("""
                     INSERT INTO recoleccion_residuos
@@ -174,7 +174,7 @@ def cargar_datos_selenium(engine):
                     VALUES
                         (:id_mun, :anio, :toneladas, :metodo, :cobertura, :fuente)
                 """), {
-                    "id_mun":    id_tijuana,
+                    "id_mun":    id_mun,
                     "anio":      int(fila["anio"]),
                     "toneladas": float(fila["toneladas_recolectadas"]),
                     "metodo":    str(fila["tipo_residuo"]),
@@ -182,12 +182,10 @@ def cargar_datos_selenium(engine):
                     "fuente":    str(fila["fuente"]),
                 })
                 insertados += 1
-            except Exception as e:
+            except Exception:
                 pass
-
         conn.commit()
 
     print(f"[✓] Registros de Selenium cargados: {insertados}")
-
 if __name__ == "__main__":
     main()
