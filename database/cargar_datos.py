@@ -7,7 +7,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.conexion import get_engine
 
-RUTA_RAW = r"C:\Users\admin\Desktop\proyecto_parra\residuos\data\residuos_raw.csv"
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUTA_RAW = os.path.join(BASE_DIR, "data", "residuos_raw.csv")
 def cargar_entidades(engine):
     """Carga entidades federativas desde el CSV."""
     entidades = [
@@ -134,8 +136,7 @@ def main():
 def cargar_datos_selenium(engine):
     """Carga los datos de colonias desde el CSV de Selenium para múltiples municipios."""
     import os
-    ruta = r"C:\Users\admin\Desktop\proyecto_parra\residuos\data\residuos_selenium.csv"
-
+    ruta = os.path.join(BASE_DIR, "data", "residuos_selenium.csv")
     if not os.path.exists(ruta):
         print("[!] No se encontró residuos_selenium.csv")
         return
